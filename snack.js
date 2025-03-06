@@ -1,6 +1,7 @@
 let h = 30;
 let w = 30;
 let tickInterval = 0.5;
+let canChangeDirection = true;
 
 const Direction = {
   UP: 1,
@@ -22,46 +23,17 @@ class Food {
   }
 
   refresh() {
-    // generate a new food
-    const range = h * w - snack.length();
-    if (range > (h * w) / 2) {
-      // not reach half of the board
-      const randomX = Math.floor(Math.random() * w);
-      const randomY = Math.floor(Math.random() * h);
-      // check if the point is occupied by snack
-      if (snack.isOccupied(new Point(randomX, randomY))) {
-        refresh();
-      } else {
-        this.point = new Point(randomX, randomY);
-        return;
-      }
-    } else {
-      const randomIndex = Math.floor(Math.random() * range);
-      const startFromEnd = randomIndex > availableSpaces / 2;
-      let counter = 0;
-      if (startFromEnd) {
-        for (let y = height - 1; y >= 0; y--) {
-          for (let x = width - 1; x >= 0; x--) {
-            if (!snack.isOccupied(new Point(x, y))) {
-              counter++;
-              if (counter === availableSpaces - random) {
-                this.point = new Point(x, y);
-                return;
-              }
-            }
+    const availableSpaces = h * w - snack.length();
+    const randomIndex = Math.floor(Math.random() * availableSpaces);
+    let counter = 0;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (!snack.isOccupied(new Point(x, y))) {
+          if (counter === randomIndex) {
+            this.point = new Point(x, y);
+            return;
           }
-        }
-      } else {
-        for (let y = 0; y < height; y++) {
-          for (let x = 0; x < width; x++) {
-            if (!snack.isOccupied(new Point(x, y))) {
-              counter++;
-              if (counter === random) {
-                this.point = new Point(x, y);
-                return;
-              }
-            }
-          }
+          counter++;
         }
       }
     }
@@ -71,10 +43,7 @@ class Food {
 class Snack {
   constructor() {
     this.direction = Direction.DOWN;
-    this.list = [];
-    this.list.push(new Point(0, 2));
-    this.list.push(new Point(0, 1));
-    this.list.push(new Point(0, 0));
+    this.list = [new Point(0, 2), new Point(0, 1), new Point(0, 0)];
   }
 
   pop() {
@@ -95,22 +64,13 @@ class Snack {
   }
 
   move() {
-    // check game over
     const headNextPoint = this.getHeadNextPoint();
-    if (headNextPoint.x < 0 || headNextPoint.x >= w) {
-      console.log("game over1");
-      return;
-    }
-    if (headNextPoint.y < 0 || headNextPoint.y >= h) {
-      console.log("game over2");
-      return;
-    }
-    if (this.isOccupied(headNextPoint)) {
-      console.log("game over3");
+    if (this.isOutOfBounds(headNextPoint) || this.isOccupied(headNextPoint)) {
+      console.log("game over");
       return;
     }
     this.pop();
-    this.unshift(this.getHeadNextPoint());
+    this.unshift(headNextPoint);
   }
 
   getHeadNextPoint() {
@@ -127,9 +87,13 @@ class Snack {
     }
   }
 
+  isOutOfBounds(point) {
+    return point.x < 0 || point.x >= w || point.y < 0 || point.y >= h;
+  }
+
   gotFood() {
     const headNextPoint = this.getHeadNextPoint();
-    return (headNextPoint.x = food.point.x && headNextPoint.y === food.point.y);
+    return headNextPoint.x === food.point.x && headNextPoint.y === food.point.y;
   }
 
   isOccupied(point) {
@@ -170,6 +134,7 @@ const render = () => {
 
 // control
 document.addEventListener("keydown", (event) => {
+  if (!canChangeDirection) return;
   switch (event.key) {
     case "ArrowUp":
       if (snack.direction !== Direction.DOWN) snack.direction = Direction.UP;
@@ -184,10 +149,12 @@ document.addEventListener("keydown", (event) => {
       if (snack.direction !== Direction.LEFT) snack.direction = Direction.RIGHT;
       break;
   }
+  canChangeDirection = false;
 });
 
 // start
 setInterval(() => {
   tick();
   render();
+  canChangeDirection = true;
 }, tickInterval * 1000);
