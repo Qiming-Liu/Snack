@@ -1,4 +1,4 @@
-# Snake Game
+# Snake Game ([Preview](qiming-liu.github.io/Snack/index.html))
 
 This is a simple implementation of the Snake game using JavaScript and HTML.
 
